@@ -1,0 +1,173 @@
+#!/usr/bin/make -f
+
+SHELL    := sh -e
+DEB_HOST_ARCH := $(shell dpkg-architecture -qDEB_HOST_ARCH)
+SOURCE := $(shell dpkg-parsechangelog | sed -ne 's,^Source: *\(.*\)$$,\1,p')
+VERSION := $(shell dpkg-parsechangelog | sed -ne 's,^Version: *\(.*\)$$,\1,p')
+VERSION_UPSTREAM := $(shell echo "$(VERSION)" | sed -e 's,-[^-]*$$,,')
+VERSION_BINNMU := $(shell echo "$(VERSION)" | sed -ne 's,.*+b\(.*\)$$,\1,p')
+
+include debian/rules.defs
+
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+  DEBIAN_KERNEL_JOBS := $(subst parallel=,,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+endif
+ifdef DEBIAN_KERNEL_JOBS
+  MAKEFLAGS += -j$(DEBIAN_KERNEL_JOBS)
+endif
+
+.NOTPARALLEL:
+
+source: debian/control
+	dh_testdir
+	$(MAKE) -f debian/rules.gen source
+
+setup: debian/control
+	dh_testdir
+	$(MAKE) -f debian/rules.gen setup_$(DEB_HOST_ARCH)
+
+build: build-arch build-indep
+
+build-arch: debian/control
+	dh_testdir
+	$(MAKE) -f debian/rules.gen build-arch_$(DEB_HOST_ARCH)
+
+build-indep: debian/control
+	dh_testdir
+	$(MAKE) -f debian/rules.gen build-indep
+
+binary:	binary-indep binary-arch
+
+binary-arch:
+	dh_testdir
+	$(MAKE) -f debian/rules.gen binary-arch_$(DEB_HOST_ARCH)
+
+binary-indep:
+	dh_testdir
+	$(MAKE) -f debian/rules.gen binary-indep
+
+get-orig-source:
+	$(CURDIR)/debian/scripts/dfsg-prune $(VERSION) $(VERSION_UPSTREAM) $(VERSION_BINNMU)
+
+maintainerclean:
+	rm -f debian/config.defines.dump debian/control debian/control.md5sum debian/linux-* debian/rules.gen debian/po/*.po
+	rm -rf $(filter-out debian .svk .svn .git, $(wildcard * .[^.]*)) debian/linux-*
+
+clean: debian/control
+	dh_testdir
+	rm -rf $(BUILD_DIR) $(STAMPS_DIR) debian/lib/python/debian_linux/*.pyc debian/lib/python/debian_linux/__pycache__ $$(find debian -maxdepth 1 -type d -name 'linux-*') debian/*-modules-*-di* debian/kernel-image-*-di* debian/xen-linux-system-*
+	dh_clean
+
+CONTROL_FILES = debian/changelog $(wildcard debian/templates/*.in)
+CONTROL_FILES += debian/config/defines $(wildcard debian/config/*/defines) $(wildcard debian/config/*/*/defines)
+CONTROL_FILES += $(wildcard debian/installer/*/kernel-versions) $(wildcard debian/installer/*/package-list)
+debian/control debian/rules.gen: debian/bin/gencontrol.py $(CONTROL_FILES)
+ifeq ($(wildcard debian/control.md5sum),)
+	$(MAKE) -f debian/rules debian/control-real
+else ifeq ($(VERSION_BINNMU),)
+	md5sum --check debian/control.md5sum --status || \
+		$(MAKE) -f debian/rules debian/control-real
+else
+	grep -v debian/changelog debian/control.md5sum | md5sum --check - --status || \
+		$(MAKE) -f debian/rules debian/control-real
+endif
+
+debian/control-real: debian/bin/gencontrol.py $(CONTROL_FILES)
+	$<
+	md5sum $^ > debian/control.md5sum
+	@echo
+	@echo This target is made to fail intentionally, to make sure
+	@echo that it is NEVER run during the automated build. Please
+	@echo ignore the following error, the debian/control file has
+	@echo been generated SUCCESSFULLY.
+	@echo
+	exit 1
+
+.PHONY: clean build setup binary-indep binary-arch binary
+
+# #!/usr/bin/make -f
+
+# SHELL    := sh -e # Ustawia powłokę na sh z opcją -e (wyjście w przypadku błędu)
+# DEB_HOST_ARCH := $(shell dpkg-architecture -qDEB_HOST_ARCH) # Pobiera architekturę hosta Debiana
+# SOURCE := $(shell dpkg-parsechangelog | sed -ne 's,^Source: *\(.*\)$$,\1,p') # Pobiera nazwę źródła z changeloga
+# VERSION := $(shell dpkg-parsechangelog | sed -ne 's,^Version: *\(.*\)$$,\1,p') # Pobiera wersję z changeloga
+# VERSION_UPSTREAM := $(shell echo "$(VERSION)" | sed -e 's,-[^-]*$$,,') # Pobiera główną wersję upstream bez dodatkowych oznaczeń
+# VERSION_BINNMU := $(shell echo "$(VERSION)" | sed -ne 's,.*+b\(.*\)$$,\1,p') # Pobiera numer binarny NMU (Non-Maintainer Upload)
+
+# include debian/rules.defs # Dołącza plik z dodatkowym definicjami
+
+# ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS))) # Sprawdza, czy w opcjach budowania ustawiono "parallel"
+#   DEBIAN_KERNEL_JOBS := $(subst parallel=,,$(filter parallel=%,$(DEB_BUILD_OPTIONS))) # Ustawia liczbę zadań równoległych
+# endif
+# ifdef DEBIAN_KERNEL_JOBS
+#   MAKEFLAGS += -j$(DEBIAN_KERNEL_JOBS) # Dodaje flagę make do równoległego budowania
+# endif
+
+# .NOTPARALLEL: # Wyłącza równoległe budowanie dla poniższych celów
+
+# source: debian/control # Cel "source" zależny od pliku debian/control
+# 	dh_testdir # Sprawdza, czy katalog budowania jest prawidłowy
+# 	$(MAKE) -f debian/rules.gen source # Uruchamia make z plikiem rules.gen dla celu "source"
+
+# setup: debian/control # Cel "setup" zależny od pliku debian/control
+# 	dh_testdir # Sprawdza, czy katalog budowania jest prawidłowy
+# 	$(MAKE) -f debian/rules.gen setup_$(DEB_HOST_ARCH) # Uruchamia make z plikiem rules.gen dla celu "setup" z odpowiednią architekturą
+
+# build: build-arch build-indep # Cel "build" zależny od "build-arch" i "build-indep"
+
+# build-arch: debian/control # Cel "build-arch" zależny od pliku debian/control
+# 	dh_testdir # Sprawdza, czy katalog budowania jest prawidłowy
+# 	$(MAKE) -f debian/rules.gen build-arch_$(DEB_HOST_ARCH) # Uruchamia make z plikiem rules.gen dla celu "build-arch" z odpowiednią architekturą
+
+# build-indep: debian/control # Cel "build-indep" zależny od pliku debian/control
+# 	dh_testdir # Sprawdza, czy katalog budowania jest prawidłowy
+# 	$(MAKE) -f debian/rules.gen build-indep # Uruchamia make z plikiem rules.gen dla celu "build-indep"
+
+# binary: binary-indep binary-arch # Cel "binary" zależny od "binary-indep" i "binary-arch"
+
+# binary-arch: # Cel "binary-arch"
+# 	dh_testdir # Sprawdza, czy katalog budowania jest prawidłowy
+# 	$(MAKE) -f debian/rules.gen binary-arch_$(DEB_HOST_ARCH) # Uruchamia make z plikiem rules.gen dla celu "binary-arch" z odpowiednią architekturą
+
+# binary-indep: # Cel "binary-indep"
+# 	dh_testdir # Sprawdza, czy katalog budowania jest prawidłowy
+# 	$(MAKE) -f debian/rules.gen binary-indep # Uruchamia make z plikiem rules.gen dla celu "binary-indep"
+
+# get-orig-source: # Cel "get-orig-source"
+# 	$(CURDIR)/debian/scripts/dfsg-prune $(VERSION) $(VERSION_UPSTREAM) $(VERSION_BINNMU) # Uruchamia skrypt dfsg-prune z odpowiednimi wersjami
+
+# maintainerclean: # Cel "maintainerclean"
+# 	rm -f debian/config.defines.dump debian/control debian/control.md5sum debian/linux-* debian/rules.gen debian/po/*.po # Usuwa pliki konfiguracyjne i generowane
+# 	rm -rf $(filter-out debian .svk .svn .git, $(wildcard * .[^.]*)) debian/linux-* # Usuwa katalogi z wyjątkiem wybranych
+
+# clean: debian/control # Cel "clean" zależny od pliku debian/control
+# 	dh_testdir # Sprawdza, czy katalog budowania jest prawidłowy
+# 	rm -rf $(BUILD_DIR) $(STAMPS_DIR) debian/lib/python/debian_linux/*.pyc debian/lib/python/debian_linux/__pycache__ $$(find debian -maxdepth 1 -type d -name 'linux-*') debian/*-modules-*-di* debian/kernel-image-*-di* debian/xen-linux-system-* # Usuwa pliki i katalogi związane z budowaniem
+# 	dh_clean # Czyści pliki pomocnicze Debiana
+
+# CONTROL_FILES = debian/changelog $(wildcard debian/templates/*.in) # Definiuje pliki kontrolne
+# CONTROL_FILES += debian/config/defines $(wildcard debian/config/*/defines) $(wildcard debian/config/*/*/defines) # Dodaje pliki konfiguracyjne
+# CONTROL_FILES += $(wildcard debian/installer/*/kernel-versions) $(wildcard debian/installer/*/package-list) # Dodaje pliki instalatora
+# debian/control debian/rules.gen: debian/bin/gencontrol.py $(CONTROL_FILES) # Cel dla debian/control i debian/rules.gen
+# ifeq ($(wildcard debian/control.md5sum),) # Jeśli nie ma pliku md5sum
+# 	$(MAKE) -f debian/rules debian/control-real # Uruchamia cel "debian/control-real"
+# else ifeq ($(VERSION_BINNMU),) # Jeśli nie ma wersji binarnych NMU
+# 	md5sum --check debian/control.md5sum --status || \ # Sprawdza sumy kontrolne, w razie niezgodności uruchamia cel "debian/control-real"
+# 		$(MAKE) -f debian/rules debian/control-real
+# else
+# 	grep -v debian/changelog debian/control.md5sum | md5sum --check - --status || \ # Sprawdza sumy kontrolne bez changeloga, w razie niezgodności uruchamia cel "debian/control-real"
+# 		$(MAKE) -f debian/rules debian/control-real
+# endif
+
+# debian/control-real: debian/bin/gencontrol.py $(CONTROL_FILES) # Cel "debian/control-real" zależny od skryptu gencontrol.py i plików kontrolnych
+# 	$< # Uruchamia skrypt gencontrol.py
+# 	md5sum $^ > debian/control.md5sum # Generuje sumy kontrolne dla plików
+# 	@echo # Wypisuje komunikat
+# 	@echo This target is made to fail intentionally, to make sure
+# 	@echo that it is NEVER run during the automated build. Please
+# 	@echo ignore the following error, the debian/control file has
+# 	@echo been generated SUCCESSFULLY. # Informuje, że cel ma się nie udać, aby zapobiec jego uruchomieniu podczas automatycznego budowania
+# 	@echo
+# 	exit 1 # Kończy z błędem
+
+# .PHONY: clean build setup binary-indep binary-arch binary # Definiuje cele jako PHONY, aby make nie sprawdzał istnienia plików o tych nazwach

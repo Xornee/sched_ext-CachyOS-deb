@@ -30,3 +30,5 @@ RUN apt-get update &&\
         schedtool &&\  
     apt-get clean &&\
     rm -rfv /var/lib/apt/lists/*
+
+ENTRYPOINT ["tail", "-f", "/dev/null"]

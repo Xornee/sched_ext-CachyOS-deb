@@ -1,0 +1,6 @@
+/*.tar.*
+/*.dsc
+/*.build*
+/*.changes
+
+*.tar*
