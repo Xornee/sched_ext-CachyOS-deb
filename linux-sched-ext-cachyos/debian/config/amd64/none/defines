@@ -1,0 +1,4 @@
+[base]
+flavours:
+ linux-sched-ext-cachyos-amd64
+

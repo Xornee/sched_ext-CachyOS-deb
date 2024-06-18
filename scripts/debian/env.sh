@@ -4,21 +4,21 @@
 dir_script="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Nazwa pakietu
-package_name='linux-sched_ext_cachyos'
+package_name='linux-sched-ext-cachyos'
 
 # Ustal ścieżkę bazową, dwa poziomy wyżej niż katalog skryptu
-dir_base="${dir_script%/*/*}" # liquorix-package
+dir_base="${dir_script%/*/*}" 
 
 # Ustal ścieżkę katalogu pakietu
-dir_package="$dir_base/$package_name" # liquorix-package/linux-liquorix
+dir_package="$dir_base/$package_name" 
 
 # Ustal ścieżkę katalogu budowania
-dir_build="$dir_base/build" # liquorix-package/build
+dir_build="$dir_base/build" 
 
 # Ustal ścieżkę do skryptów dla Debiana
-dir_scripts="$dir_base/scripts/debian" #liquorix-package/scripts/debian
+dir_scripts="$dir_base/scripts/debian" 
 
-# Ustal ścieżkę do katalogu z artefaktami #liquorix-package/artifacts
+# Ustal ścieżkę do katalogu z artefaktami
 dir_artifacts="$dir_base/artifacts"
 
 # Wyciągnij wersję pakietu z pliku changelog w katalogu debian
@@ -43,9 +43,11 @@ source_release='bookworm'
 
 # Wydania Debiana i Ubuntu, z którymi można budować pakiety
 releases_debian=('bookworm' 'trixie' 'sid')
+releases_ubuntu=('jammy' 'mantic' 'noble')
 
 # Mirrory dla Debiana i Ubuntu
 mirror_debian='http://deb.debian.org/debian'
+mirror_ubuntu='http://archive.ubuntu.com/ubuntu'
 
 # Ustal użytkownika budującego oraz jego katalog domowy
 build_user="$(whoami)"
@@ -72,7 +74,12 @@ function get_release_version {
     local release="${2:-}"  # Przypisanie drugiego argumentu funkcji do zmiennej lokalnej release, domyślnie pustej
     local build="${3:-${version_build}}"  # Przypisanie trzeciego argumentu funkcji do zmiennej lokalnej build, domyślnie ustawionej na wartość zmiennej version_build
 
-    declare version="${version_package}.${build}~${release}"  # Deklaracja zmiennej lokalnej version jako pustej
+    declare version=''  # Deklaracja zmiennej lokalnej version jako pustej
+    if [[ "$distro" == "ubuntu" ]]; then  # Sprawdzenie, czy zmienna distro jest równa "ubuntu"
+        version="${version_package}ubuntu${build}~${release}"  # Jeśli tak, zbudowanie wersji w formacie dla Ubuntu
+    else
+        version="${version_package}.${build}~${release}"  # W przeciwnym razie, zbudowanie wersji w formacie dla Debiana
+    fi
 
     echo "$version"  # Zwrócenie zbudowanej wersji
 }

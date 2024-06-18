@@ -16,5 +16,6 @@ if [[ ! -f "$dir_base/$package_source" ]]; then
     echo "[WARN ] Missing source file: $dir_base/$package_source, downloading now."
     
     # Pobierz plik źródłowy z internetu, używając wget
-    wget -O "$dir_base/$package_source" "https://cdn.kernel.org/pub/linux/kernel/v${version_major}.x/linux-${version_kernel}.tar.xz"
+    #wget -O "$dir_base/$package_source" "https://cdn.kernel.org/pub/linux/kernel/v${version_major}.x/linux-${version_kernel}.tar.xz"
+    wget -O "$dir_base/$package_source" "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.9.5.tar.xz"
 fi

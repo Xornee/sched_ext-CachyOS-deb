@@ -1,0 +1,14 @@
+# debian/0001-cachyos-kernel-6.9-all-in-one-patch-for-fucking-dpkg.patch
+debian/0001-aes-crypto.patch
+debian/0002-amd-pstate.patch
+debian/0003-bbr3.patch
+debian/0004-cachy.patch
+debian/0005-deckify.patch
+debian/0006-fixes.patch
+debian/0007-ksm.patch
+debian/0008-ntsync.patch
+debian/0009-t2.patch
+debian/0010-zstd.patch
+# debian/0001-sched-ext.patch
+# debian/0001-bore-cachy-ext.patch
+

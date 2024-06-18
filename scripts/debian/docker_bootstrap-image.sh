@@ -4,6 +4,8 @@
 # -e : zakończ skrypt, jeśli jakiekolwiek polecenie zakończy się błędem
 # -u : zakończ skrypt, jeśli wystąpi odwołanie do niezadeklarowanej zmiennej
 # -o pipefail : zakończ skrypt, jeśli jakiekolwiek polecenie w potoku zakończy się błędem
+echo "dupa"
+
 set -euo pipefail
 
 # Wczytanie zmiennych środowiskowych z pliku env.sh

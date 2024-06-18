@@ -43,40 +43,25 @@ if [[ $fail -eq 1 ]]; then
     exit 1
 fi
 
-# docker run --net='host' \
-#     --rm \
-#     --tmpfs /build:exec \
-#     --ulimit nofile=524288:524288 \
-#     -v $dir_base:/sched_ext-CachyOS-deb \
-#     -t "linux-sched_ext_cachyos_$source_arch/$source_distro/$source_release" \
-#     /sched_ext-CachyOS-deb/scripts/debian/container_build-source.sh \
-#         $distro \
-#         $release \
-#         $build 
-echo $distro 
-echo $release 
-echo $build 
-
-
-
 docker run --net='host' \
+    --rm \
     --tmpfs /build:exec \
     --ulimit nofile=524288:524288 \
     -v $dir_base:/sched_ext-CachyOS-deb \
     -t "linux-sched_ext_cachyos_$source_arch/$source_distro/$source_release" \
-    tail -f /dev/null
+    /sched_ext-CachyOS-deb/scripts/debian/container_build-source.sh \
+        $distro \
+        $release \
+        $build 
 
-echo "Runned" 
-# Uruchomienie kontenera Docker
-#docker run --net='host' \  # Używanie sieci hosta
-#    --rm \  # Usunięcie kontenera po zakończeniu działania
-#    --tmpfs /build:exec \  # Montowanie tmpfs do katalogu /build z uprawnieniami do wykonywania
-#    --ulimit nofile=524288:524288 \  # Ustawienie limitu liczby otwartych plików na 524288
-#    -v $dir_base:/liquorix-package \  # Montowanie katalogu $dir_base jako /liquorix-package w kontenerze
-#    -t "liquorix_$source_arch/$source_distro/$source_release" \  # Używanie obrazu Docker o nazwie zawierającej architekturę, dystrybucję i wydanie
-#    /liquorix-package/scripts/debian/container_build-source.sh \  # Uruchamianie skryptu container_build-source.sh wewnątrz kontenera
-#        $distro \  # Przekazanie zmiennej distro jako argument do skryptu
-#        $release \  # Przekazanie zmiennej release jako argument do skryptu
-#        $build  # Przekazanie zmiennej build jako argument do skryptu
+
+
+# docker run --net='host' \
+#     --tmpfs /build:exec \
+#     --ulimit nofile=524288:524288 \
+#     -v $dir_base:/sched_ext-CachyOS-deb \
+#     -t "linux-sched_ext_cachyos_$source_arch/$source_distro/$source_release" \
+#     tail -f /dev/null
+
 
 
